@@ -1,11 +1,12 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
-import path from 'path'
-
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: { '@': path.resolve(__dirname, './src') },
-  },
-})
+@import "tailwindcss";
+:root {
+  --brand-green: #2E7D32;
+  --brand-green-light: #4CAF50;
+  --brand-blue: #1565C0;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: Inter, system-ui, sans-serif;
+  background-color: #f9fafb;
+  color: #111827;
+}
