@@ -1,4 +1,3 @@
-'EOF'
 name: Build and Push Docker Image
 
 on:
@@ -29,4 +28,3 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/agriconnect:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-EOF
