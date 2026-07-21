@@ -1,5 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
+import Register from '@/pages/auth/Register'
+import Login from '@/pages/auth/Login'
 
 const Home = () => <div className="p-8 text-xl">🌱 AgriConnect Home</div>
 const Login = () => <div className="p-8 text-xl">Login page</div>

@@ -1,22 +1,21 @@
-import { useEffect, useState } from 'react'
+// src/hooks/useAuth.ts
+import { useState, useEffect } from 'react'
+import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
-
-interface Profile {
-  role?: string | null
-}
-
-interface AuthUser {
-  id: string
-}
+import { Profile, Role, SignUpArgs, SignInArgs } from '@/types'
 
 export function useAuth() {
-  const [user, setUser] = useState<AuthUser | null>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState<boolean>(true)
 
-  async function fetchProfile(userId: string) {
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
-    setProfile((data as Profile | null) ?? null)
+  async function fetchProfile(userId: string): Promise<void> {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single<Profile>()
+    setProfile(data)
   }
 
   useEffect(() => {
@@ -26,55 +25,39 @@ export function useAuth() {
       setLoading(false)
     })
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
-      else setProfile(null)
-    })
+    const { data: { subscription } } =
+      supabase.auth.onAuthStateChange((_, session) => {
+        setUser(session?.user ?? null)
+        if (session?.user) fetchProfile(session.user.id)
+        else setProfile(null)
+      })
     return () => subscription.unsubscribe()
   }, [])
 
-  async function signUp({ email, password, role, fullName, phone }: {
-    email: string
-    password: string
-    role: string
-    fullName: string
-    phone: string
-  }) {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { role, full_name: fullName, phone },
-      },
+  async function signUp({ email, password, role, fullName, phone }: SignUpArgs): Promise<void> {
+    const { error } = await supabase.auth.signUp({
+      email, password,
+      options: { data: { role, full_name: fullName, phone } },
     })
     if (error) throw error
-    return data
   }
 
-  async function signIn({ email, password }: { email: string; password: string }) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  async function signIn({ email, password }: SignInArgs): Promise<void> {
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
-    return data
   }
 
-  async function signOut() {
+  async function signOut(): Promise<void> {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
   }
 
   return {
-    user,
-    profile,
-    role: profile?.role ?? null,
+    user, profile,
+    role: profile?.role as Role | null,
     isFarmer: profile?.role === 'farmer',
-    isBuyer: profile?.role === 'buyer',
+    isBuyer:  profile?.role === 'buyer',
     isLoggedIn: !!user,
-    loading,
-    signUp,
-    signIn,
-    signOut,
+    loading, signUp, signIn, signOut,
   }
 }
