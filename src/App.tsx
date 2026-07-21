@@ -1,21 +1,30 @@
 import { Routes, Route } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
-import Register from '@/pages/auth/Register'
+import Navbar from '@/components/layout/Navbar'
 import Login from '@/pages/auth/Login'
+import Register from '@/pages/auth/Register'
+import Dashboard from '@/pages/home/Dashboard'
 
-const Home = () => <div className="p-8 text-xl">🌱 AgriConnect Home</div>
-const Login = () => <div className="p-8 text-xl">Login page</div>
-const Register = () => <div className="p-8 text-xl">Register page</div>
-const Dashboard = () => <div className="p-8 text-xl">🔒 Dashboard (logged in only)</div>
+function AppLayout() {
+  return (
+    <>
+      <Navbar />
+      <main className="bg-gray-50 min-h-screen">
+        <ProtectedRoute />
+      </main>
+    </>
+  )
+}
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route element={<ProtectedRoute />}>
+      <Route element={<AppLayout />}>
+        <Route path="/" element={<Dashboard />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        {/* More routes go here as you build them */}
       </Route>
     </Routes>
   )
