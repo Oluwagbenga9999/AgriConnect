@@ -10,7 +10,10 @@ RUN npm run build
 
 FROM nginx:alpine
 
+# Copy built app
 COPY --from=builder /app/dist /usr/share/nginx/html
 
+# Expose port
 EXPOSE 80
+
 CMD ["nginx", "-g", "daemon off;"]
