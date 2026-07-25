@@ -14,6 +14,16 @@ export default function Register() {
     fullName: '', email: '', phone: '', password: '', confirm: ''
   })
 
+  function getErrorMessage(err: unknown) {
+    if (err instanceof Error) {
+      if (err.message.toLowerCase().includes('invalid api key') || err.message.toLowerCase().includes('invalid api')) {
+        return 'Registration is blocked because the Supabase API key in your .env file is invalid. Update the credentials from the Supabase dashboard and restart the app.'
+      }
+      return err.message
+    }
+    return 'Registration failed'
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (form.password !== form.confirm) {
@@ -28,7 +38,7 @@ export default function Register() {
       toast.success('Account created! Check your email to verify.')
       navigate('/login')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Registration failed')
+      toast.error(getErrorMessage(err))
     } finally { setLoading(false) }
   }
 
