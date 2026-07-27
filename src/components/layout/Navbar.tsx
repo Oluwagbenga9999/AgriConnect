@@ -1,10 +1,14 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { useAuthContext } from '@/store/AuthContext'
+import { useInbox } from '@/hooks/useMessages'
+
 
 export default function Navbar() {
   const { profile, isFarmer, signOut } = useAuthContext()
   const navigate = useNavigate()
+  const { user } = useAuthContext()
+  const { totalUnread } = useInbox(user?.id)
 
   async function handleSignOut() {
     try {
@@ -29,12 +33,24 @@ export default function Navbar() {
               My Listings
             </Link>
           )}
-          <Link to="/messages" className="hover:text-green-700 transition-colors">Messages</Link>
+          <Link to=
+            "/messages"
+            className=
+            "relative hover:text-green-700 transition-colors"
+          >
+            Messages
+            {totalUnread > 0 && (
+              <span className=
+                "absolute -top-2 -right-3 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center"
+              >
+                {totalUnread}
+              </span>
+            )}
+          </Link>
         </div>
         <div className="flex items-center gap-3">
-          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-            isFarmer ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-          }`}>
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${isFarmer ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+            }`}>
             {isFarmer ? '🌾 Farmer' : '🏪 Buyer'}
           </span>
           <Link to="/profile" className="text-sm font-medium text-gray-700 hover:text-green-700">

@@ -7,8 +7,11 @@ import Login from '@/pages/auth/Login'
 import Register from '@/pages/auth/Register'
 import Dashboard from '@/pages/home/Dashboard'
 import BrowseListings from '@/components/listings/BrowseListings'
-import CreateListing  from '@/components/listings/CreateListing'
-import MyListings     from '@/components/listings/MyListings'
+import CreateListing from '@/components/listings/CreateListing'
+import MyListings from '@/components/listings/MyListings'
+import Inbox from '@/pages/messages/Inbox'
+import Conversation from '@/pages/messages/Conversation'
+
 
 function AppLayout() {
   return (
@@ -32,9 +35,12 @@ export default function App() {
         <Route path="/profile" element={<PublicProfile />} />
         <Route path="/profile/edit" element={<EditProfile />} />
         <Route path="/profile/:id" element={<PublicProfile />} />
-        <Route path="/listings"        element={<BrowseListings />} />
-        <Route path="/listings/create" element={<CreateListing />}  />
-        <Route path="/listings/mine"   element={<MyListings />}     />
+        <Route path="/listings" element={<BrowseListings />} />
+        <Route path="/listings/create" element={<CreateListing />} />
+        <Route path="/listings/mine" element={<MyListings />} />
+        <Route path="/messages" element={<Inbox />} />
+        <Route path="/messages/:id" element={<Conversation />} />
+
       </Route>
     </Routes>
   )
