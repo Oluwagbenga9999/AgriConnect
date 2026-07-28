@@ -6,8 +6,15 @@ import { fileURLToPath, URL } from 'node:url'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+  },
+  server: {
+    host: true,
+    port: 5173,
+    strictPort: true,
+    watch: { usePolling: true },
+    hmr: {
+      clientPort: 5173,
     },
   },
 })

@@ -63,17 +63,23 @@ export function useInbox(userId: string | undefined) {
   useEffect(() => { fetchInbox() }, [fetchInbox])
 
   useEffect(() => {
-    if (!userId) return
-    const channel = supabase
-      .channel(`inbox:${userId}`)
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        () => fetchInbox()
-      )
-      .subscribe()
+  if (!userId) return
 
-    return () => { supabase.removeChannel(channel) }
-  }, [userId, fetchInbox])
+  let isActive = true
+  const channel = supabase.channel(`inbox:${userId}:${crypto.randomUUID()}`)
+
+  channel.on('postgres_changes',
+    { event: 'INSERT', schema: 'public', table: 'messages' },
+    () => { if (isActive) fetchInbox() }
+  )
+
+  channel.subscribe()
+
+  return () => {
+    isActive = false
+    supabase.removeChannel(channel)
+  }
+}, [userId, fetchInbox])
 
   const totalUnread = conversations.reduce((sum, c) => sum + c.unreadCount, 0)
   return { conversations, loading, totalUnread, refetch: fetchInbox }
@@ -109,26 +115,31 @@ export function useConversation(currentUserId: string | undefined, otherUserId: 
     }
     load()
 
-    const channel = supabase
-      .channel(`conversation:${[currentUserId, otherUserId].sort().join('-')}`)
-      .on<Message>('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        (payload) => {
-          const m = payload.new as Message
-          const belongsHere =
-            (m.sender_id === currentUserId && m.receiver_id === otherUserId) ||
-            (m.sender_id === otherUserId && m.receiver_id === currentUserId)
-          if (!belongsHere) return
-          setMessages(prev => [...prev, m])
-          if (m.receiver_id === currentUserId) {
-            supabase.from('messages').update({ read: true }).eq('id', m.id).then(() => {})
-          }
-        }
-      )
-      .subscribe()
+    let isActive = true
+const channel = supabase.channel(`conversation:${[currentUserId, otherUserId].sort().join('-')}:${crypto.randomUUID()}`)
 
-    channelRef.current = channel
-    return () => { supabase.removeChannel(channel) }
+channel.on<Message>('postgres_changes',
+  { event: 'INSERT', schema: 'public', table: 'messages' },
+  (payload) => {
+    if (!isActive) return
+    const m = payload.new as Message
+    const belongsHere =
+      (m.sender_id === currentUserId && m.receiver_id === otherUserId) ||
+      (m.sender_id === otherUserId && m.receiver_id === currentUserId)
+    if (!belongsHere) return
+    setMessages(prev => [...prev, m])
+    if (m.receiver_id === currentUserId) {
+      supabase.from('messages').update({ read: true }).eq('id', m.id).then(() => {})
+    }
+  }
+)
+
+channel.subscribe()
+channelRef.current = channel
+return () => {
+  isActive = false
+  supabase.removeChannel(channel)
+}
   }, [currentUserId, otherUserId])
 
   return { messages, loading }
