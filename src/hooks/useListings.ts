@@ -18,8 +18,8 @@ export function useListings(filters: ListingFilters = {}) {
     setLoading(true)
     let query = supabase
       .from('listings')
-      .select('*, farmer:profiles!farmer_id(id,full_name,avatar_url,state,location,crop_types)')
-      .eq('status', 'available')
+      .select('*')
+      .or('status.eq.available,status.is.null')
       .order('created_at', { ascending: false })
 
     if (filters.crop)   query = query.eq('crop', filters.crop)
@@ -70,7 +70,7 @@ export interface CreateListingPayload {
 export async function createListing(payload: CreateListingPayload): Promise<Listing> {
   const { data, error } = await supabase
     .from('listings')
-    .insert(payload)
+    .insert({ ...payload, status: 'available' })
     .select()
     .single<Listing>()
   if (error) throw error

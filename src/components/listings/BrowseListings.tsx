@@ -19,7 +19,7 @@ export default function BrowseListings() {
   const [cropFilter, setCropFilter] = useState('All')
   const [stateFilter, setStateFilter] = useState('All States')
 
-  const { listings, loading } = useListings({
+  const { listings, loading, error } = useListings({
     crop:   cropFilter !== 'All' ? cropFilter : undefined,
     state:  stateFilter !== 'All States' ? stateFilter : undefined,
     search: search || undefined,
@@ -64,6 +64,12 @@ export default function BrowseListings() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {[...Array(6)].map((_, i) => <div key={i} className="h-64 bg-gray-100 rounded-2xl animate-pulse" />)}
+        </div>
+      ) : error ? (
+        <div className="text-center py-24">
+          <p className="text-5xl mb-4">⚠️</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">Unable to load listings</h3>
+          <p className="text-gray-500 text-sm">{error}</p>
         </div>
       ) : listings.length === 0 ? (
         <div className="text-center py-24">

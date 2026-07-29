@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast'
 import { supabase } from '@/lib/supabase'
 import { useAuthContext } from '@/store/AuthContext'
 import { createPendingOrder, generateReference, useOrderStatus } from '@/hooks/useOrders'
+import { usePublicProfile } from '@/hooks/useProfile'
 import { Listing } from '@/types'
 
 const PAYSTACK_PUBLIC_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY as string
@@ -24,11 +25,13 @@ export default function ListingDetail() {
     if (!id) return
     supabase
       .from('listings')
-      .select('*, farmer:profiles!farmer_id(*)')
+      .select('*')
       .eq('id', id)
       .single<Listing>()
       .then(({ data }) => { setListing(data); setLoading(false) })
   }, [id])
+
+  const { profile: farmerProfile } = usePublicProfile(listing?.farmer_id)
 
   useEffect(() => {
     if (orderStatus === 'confirmed') {
@@ -40,25 +43,30 @@ export default function ListingDetail() {
   const amountKobo = listing ? Math.round(listing.quantity_kg * listing.price_per_kg * 100) : 0
 
   const initializePayment = usePaystackPayment({
-    reference,
-    email: user?.email ?? '',
-    amount: amountKobo,
     publicKey: PAYSTACK_PUBLIC_KEY,
   } as any)
 
   async function handleBuyNow() {
     if (!user || !listing) return
     setPaying(true)
+
+    const ref = generateReference()
+    setReference(ref)
+
     try {
-      const ref = generateReference()
-      await createPendingOrder(listing.id, user.id, listing.farmer_id, amountKobo, ref)
-      setReference(ref)
-      setTimeout(() => {
-        initializePayment({
-          onSuccess: () => toast.success('Payment submitted — confirming…'),
-          onClose: () => setPaying(false),
-        } as any)
-      }, 100)
+      const pendingOrder = createPendingOrder(listing.id, user.id, listing.farmer_id, amountKobo, ref)
+
+      initializePayment({
+        config: {
+          reference: ref,
+          email: user.email,
+          amount: amountKobo,
+        },
+        onSuccess: () => toast.success('Payment submitted — confirming…'),
+        onClose: () => setPaying(false),
+      } as any)
+
+      await pendingOrder
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not start checkout')
       setPaying(false)
@@ -92,8 +100,8 @@ export default function ListingDetail() {
           {paying ? 'Waiting for confirmation…' : `Buy now — ₦${(amountKobo / 100).toLocaleString()}`}
         </button>
       )}
-      {listing.farmer && (
-        <Link to={`/profile/${listing.farmer.id}`} className="block mt-4 text-sm text-green-700 hover:underline">
+      {farmerProfile && (
+        <Link to={`/profile/${farmerProfile.id}`} className="block mt-4 text-sm text-green-700 hover:underline">
           View farmer profile →
         </Link>
       )}

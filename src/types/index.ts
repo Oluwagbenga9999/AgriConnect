@@ -45,7 +45,7 @@ export interface Order {
   listing_id: string
   buyer_id: string
   farmer_id: string
-  amount_paid: number
+  amount_kobo: number
   status: 'pending' | 'confirmed' | 'completed'
   paystack_ref: string
   created_at: string

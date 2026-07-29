@@ -11,6 +11,9 @@ import CreateListing from '@/components/listings/CreateListing'
 import MyListings from '@/components/listings/MyListings'
 import Inbox from '@/pages/messages/Inbox'
 import Conversation from '@/pages/messages/Conversation'
+import ListingDetail from '@/pages/listings/ListingDetail'
+import OrderHistory from '@/pages/orders/OrderHistory'
+
 
 
 function AppLayout() {
@@ -40,6 +43,8 @@ export default function App() {
         <Route path="/listings/mine" element={<MyListings />} />
         <Route path="/messages" element={<Inbox />} />
         <Route path="/messages/:id" element={<Conversation />} />
+        <Route path="/listings/:id" element={<ListingDetail />} />
+        <Route path="/orders" element={<OrderHistory />} />
 
       </Route>
     </Routes>
