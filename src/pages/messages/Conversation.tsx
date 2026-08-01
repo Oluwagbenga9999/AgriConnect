@@ -2,30 +2,40 @@
 import { useState, useRef, useEffect } from 'react'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
+import { supabase } from '@/lib/supabase'
 import { useAuthContext } from '@/store/AuthContext'
 import { useConversation, sendMessage } from '@/hooks/useMessages'
 import { usePublicProfile } from '@/hooks/useProfile'
+import { Listing } from '@/types'
 
 export default function Conversation() {
   const { id } = useParams<{ id: string }>()
   const [searchParams] = useSearchParams()
   const otherUserId = id ?? searchParams.get('to') ?? undefined
+  const listingId = searchParams.get('listing') ?? undefined
   const { user } = useAuthContext()
   const { profile: otherUser } = usePublicProfile(otherUserId)
   const { messages, loading } = useConversation(user?.id, otherUserId)
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
+  const [contextListing, setContextListing] = useState<Listing | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages.length])
 
+  useEffect(() => {
+    if (!listingId) { setContextListing(null); return }
+    supabase.from('listings').select('*').eq('id', listingId).single<Listing>()
+      .then(({ data }) => setContextListing(data))
+  }, [listingId])
+
   async function handleSend() {
     if (!text.trim() || !user || !otherUserId) return
     setSending(true)
     try {
-      await sendMessage(user.id, otherUserId, text)
+      await sendMessage(user.id, otherUserId, text, listingId)
       setText('')
     } catch {
       toast.error('Failed to send message')
@@ -54,10 +64,17 @@ export default function Conversation() {
             <div className="w-full h-full flex items-center justify-center">{otherUser?.role === 'farmer' ? '🌾' : '🏪'}</div>
           )}
         </div>
-        <Link to={`/profile/${otherUserId}`} className="font-semibold text-gray-900 hover:text-green-700">
+        <Link to={\`/profile/\${otherUserId}\`} className="font-semibold text-gray-900 hover:text-green-700">
           {otherUser?.full_name ?? 'AgriConnect User'}
         </Link>
       </div>
+      {contextListing && (
+        <Link to={\`/listings/\${contextListing.id}\`}
+          className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-3 py-2 mt-3 text-xs text-green-800 hover:bg-green-100 transition-colors">
+          🌾 <span className="font-medium">About: {contextListing.crop}</span>
+          <span className="text-green-600 ml-auto">View listing →</span>
+        </Link>
+      )}
       <div className="flex-1 overflow-y-auto py-4 space-y-3">
         {loading ? (
           <div className="text-center text-gray-400 text-sm py-10">Loading messages…</div>
@@ -69,12 +86,12 @@ export default function Conversation() {
           messages.map(m => {
             const isMine = m.sender_id === user?.id
             return (
-              <div key={m.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${
+              <div key={m.id} className={\`flex \${isMine ? 'justify-end' : 'justify-start'}\`}>
+                <div className={\`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm \${
                   isMine
                     ? 'bg-green-600 text-white rounded-br-md'
                     : 'bg-gray-100 text-gray-800 rounded-bl-md'
-                }`}>
+                }\`}>
                   {m.content}
                 </div>
               </div>
