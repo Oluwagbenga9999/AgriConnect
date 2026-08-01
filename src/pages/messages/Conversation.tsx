@@ -64,12 +64,12 @@ export default function Conversation() {
             <div className="w-full h-full flex items-center justify-center">{otherUser?.role === 'farmer' ? '🌾' : '🏪'}</div>
           )}
         </div>
-        <Link to={\`/profile/\${otherUserId}\`} className="font-semibold text-gray-900 hover:text-green-700">
+        <Link to={`/profile/${otherUserId}`} className="font-semibold text-gray-900 hover:text-green-700">
           {otherUser?.full_name ?? 'AgriConnect User'}
         </Link>
       </div>
       {contextListing && (
-        <Link to={\`/listings/\${contextListing.id}\`}
+        <Link to={`/listings/${contextListing.id}`}
           className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-3 py-2 mt-3 text-xs text-green-800 hover:bg-green-100 transition-colors">
           🌾 <span className="font-medium">About: {contextListing.crop}</span>
           <span className="text-green-600 ml-auto">View listing →</span>
@@ -86,12 +86,12 @@ export default function Conversation() {
           messages.map(m => {
             const isMine = m.sender_id === user?.id
             return (
-              <div key={m.id} className={\`flex \${isMine ? 'justify-end' : 'justify-start'}\`}>
-                <div className={\`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm \${
+              <div key={m.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${
                   isMine
                     ? 'bg-green-600 text-white rounded-br-md'
                     : 'bg-gray-100 text-gray-800 rounded-bl-md'
-                }\`}>
+                }`}>
                   {m.content}
                 </div>
               </div>
