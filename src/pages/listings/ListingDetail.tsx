@@ -94,14 +94,21 @@ export default function ListingDetail() {
         </div>
       </div>
       {listing.description && <p className="text-sm text-gray-600 mt-5 leading-relaxed">{listing.description}</p>}
-      {isBuyer && listing.status === 'available' && (
+            {isBuyer && listing.status === 'available' && (
         <button onClick={handleBuyNow} disabled={paying}
           className="w-full mt-6 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-semibold py-3.5 rounded-xl transition-colors">
           {paying ? 'Waiting for confirmation…' : `Buy now — ₦${(amountKobo / 100).toLocaleString()}`}
         </button>
       )}
+      {farmerProfile && user?.id !== farmerProfile.id && (
+        <Link
+          to={`/messages?to=${farmerProfile.id}&listing=${listing.id}`}
+          className="w-full mt-3 flex items-center justify-center gap-2 border border-green-200 text-green-700 hover:bg-green-50 font-semibold py-3 rounded-xl transition-colors">
+          💬 Message farmer
+        </Link>
+      )}
       {farmerProfile && (
-        <Link to={`/profile/${farmerProfile.id}`} className="block mt-4 text-sm text-green-700 hover:underline">
+        <Link to={`/profile/${farmerProfile.id}`} className="block mt-4 text-sm text-green-700 hover:underline text-center">
           View farmer profile →
         </Link>
       )}
