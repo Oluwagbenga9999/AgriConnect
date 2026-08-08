@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuthContext } from '@/store/AuthContext'
+import { useMyListings } from '@/hooks/useListings'
+import { useInbox } from '@/hooks/useMessages'
 
 interface QuickAction {
   icon:  string
@@ -31,9 +33,36 @@ const COLOR_MAP: Record<string, string> = {
 }
 
 export default function Dashboard() {
-  const { profile, isFarmer } = useAuthContext()
+  const { user, profile, isFarmer } = useAuthContext()
   const actions = isFarmer ? FARMER_ACTIONS : BUYER_ACTIONS
   const firstName = profile?.full_name?.split(' ')[0] ?? 'there'
+
+  // Real completion signals — no more hardcoded checklist state
+  const { listings: myListings } = useMyListings(isFarmer ? user?.id : undefined)
+  const { conversations } = useInbox(user?.id)
+
+  const isProfileComplete = isFarmer
+    ? !!(profile?.full_name && profile?.phone && (profile?.location || profile?.state) && profile?.crop_types?.length)
+    : !!(profile?.full_name && profile?.phone && (profile?.location || profile?.state))
+
+  const hasListing = myListings.length > 0
+  const hasConversation = conversations.length > 0
+
+  const farmerSteps = [
+    { done: true, text: 'Create your account' },
+    { done: isProfileComplete, text: 'Complete your profile', to: '/profile/edit' },
+    { done: hasListing, text: 'Post your first listing', to: '/listings/create' },
+    { done: hasConversation, text: 'Receive your first inquiry', to: '/messages' },
+  ]
+
+  const buyerSteps = [
+    { done: true, text: 'Create your account' },
+    { done: isProfileComplete, text: 'Complete your profile', to: '/profile/edit' },
+    { done: true, text: 'Browse available produce', to: '/listings' },
+    { done: hasConversation, text: 'Send your first inquiry', to: '/listings' },
+  ]
+
+  const steps = isFarmer ? farmerSteps : buyerSteps
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
@@ -62,27 +91,17 @@ export default function Dashboard() {
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
         <h2 className="font-semibold text-gray-900 mb-4">Getting Started</h2>
         <div className="space-y-3">
-          {(isFarmer ? [
-            { done: true,  text: 'Create your account' },
-            { done: false, text: 'Complete your profile', to: '/profile' },
-            { done: false, text: 'Post your first listing', to: '/listings/create' },
-            { done: false, text: 'Receive your first inquiry' },
-          ] : [
-            { done: true,  text: 'Create your account' },
-            { done: false, text: 'Complete your profile', to: '/profile' },
-            { done: false, text: 'Browse available produce', to: '/listings' },
-            { done: false, text: 'Send your first inquiry' },
-          ]).map((step, i) => (
+          {steps.map((step, i) => (
             <div key={i} className="flex items-center gap-3">
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${
                 step.done ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400'
               }`}>{step.done ? '✓' : i + 1}</div>
-              {'to' in step ? (
-                <Link to={step.to!} className="text-sm text-green-600 hover:underline font-medium">
+              {!step.done && step.to ? (
+                <Link to={step.to} className="text-sm text-green-600 hover:underline font-medium">
                   {step.text}
                 </Link>
               ) : (
-                <span className="text-sm text-gray-500">{step.text}</span>
+                <span className={`text-sm ${step.done ? 'text-gray-700' : 'text-gray-500'}`}>{step.text}</span>
               )}
             </div>
           ))}

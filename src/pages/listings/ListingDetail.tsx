@@ -102,7 +102,7 @@ export default function ListingDetail() {
       )}
       {farmerProfile && user?.id !== farmerProfile.id && (
         <Link
-          to={`/messages?to=${farmerProfile.id}&listing=${listing.id}`}
+          to={`/messages/${farmerProfile.id}?listing=${listing.id}`}
           className="w-full mt-3 flex items-center justify-center gap-2 border border-green-200 text-green-700 hover:bg-green-50 font-semibold py-3 rounded-xl transition-colors">
           💬 Message farmer
         </Link>

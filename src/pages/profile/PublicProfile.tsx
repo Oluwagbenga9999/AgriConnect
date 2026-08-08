@@ -67,7 +67,7 @@ export default function PublicProfile() {
                   Edit profile
                 </Link>
               ) : (
-                <Link to={`/messages?to=${resolvedId}`}
+                <Link to={`/messages/${resolvedId}`}
                   className="text-sm font-medium text-white bg-green-600 rounded-lg px-4 py-2 hover:bg-green-700">
                   💬 Send message
                 </Link>

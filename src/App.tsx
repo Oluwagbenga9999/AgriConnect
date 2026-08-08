@@ -3,6 +3,7 @@ import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
 import EditProfile from '@/pages/profile/EditProfile'
 import PublicProfile from '@/pages/profile/PublicProfile'
 import Navbar from '@/components/layout/Navbar'
+import Landing from '@/pages/home/Landing'
 import Login from '@/pages/auth/Login'
 import Register from '@/pages/auth/Register'
 import Dashboard from '@/pages/home/Dashboard'
@@ -13,8 +14,6 @@ import Inbox from '@/pages/messages/Inbox'
 import Conversation from '@/pages/messages/Conversation'
 import ListingDetail from '@/pages/listings/ListingDetail'
 import OrderHistory from '@/pages/orders/OrderHistory'
-
-
 
 function AppLayout() {
   return (
@@ -30,10 +29,10 @@ function AppLayout() {
 export default function App() {
   return (
     <Routes>
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route element={<AppLayout />}>
-        <Route path="/" element={<Dashboard />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<PublicProfile />} />
         <Route path="/profile/edit" element={<EditProfile />} />
@@ -45,7 +44,6 @@ export default function App() {
         <Route path="/messages/:id" element={<Conversation />} />
         <Route path="/listings/:id" element={<ListingDetail />} />
         <Route path="/orders" element={<OrderHistory />} />
-
       </Route>
     </Routes>
   )

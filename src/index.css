@@ -3,10 +3,32 @@
   --brand-green: #2E7D32;
   --brand-green-light: #4CAF50;
   --brand-blue: #1565C0;
+
+  /* Landing page palette */
+  --paper: #F2F5EE;
+  --indigo: #16233D;
+  --indigo-light: #1E2E4D;
+  --gold: #C9922B;
+  --crop-green: #1F6E45;
+  --rust: #A94E2C;
+  --ink: #1A1E1B;
 }
 * { box-sizing: border-box; }
 body {
-  font-family: Inter, system-ui, sans-serif;
+  font-family: 'Work Sans', system-ui, sans-serif;
   background-color: #f9fafb;
   color: #111827;
+}
+.font-display { font-family: 'Fraunces', Georgia, serif; }
+.font-mono-ticker { font-family: 'IBM Plex Mono', monospace; }
+
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.ticker-track {
+  animation: ticker-scroll 32s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track { animation: none; }
 }
