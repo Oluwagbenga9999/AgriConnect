@@ -38,8 +38,10 @@ export default function App() {
         <Route path="/profile/edit" element={<EditProfile />} />
         <Route path="/profile/:id" element={<PublicProfile />} />
         <Route path="/listings" element={<BrowseListings />} />
-        <Route path="/listings/create" element={<CreateListing />} />
-        <Route path="/listings/mine" element={<MyListings />} />
+        <Route element={<ProtectedRoute role="farmer" />}>
+          <Route path="/listings/create" element={<CreateListing />} />
+          <Route path="/listings/mine" element={<MyListings />} />
+        </Route>
         <Route path="/messages" element={<Inbox />} />
         <Route path="/messages/:id" element={<Conversation />} />
         <Route path="/listings/:id" element={<ListingDetail />} />

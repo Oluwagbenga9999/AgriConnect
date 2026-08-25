@@ -17,6 +17,6 @@ export function ProtectedRoute({ role = null }: ProtectedRouteProps) {
   }
 
   if (!isLoggedIn) return <Navigate to="/login" replace />
-  if (role && userRole !== role) return <Navigate to="/" replace />
+  if (role && userRole !== role) return <Navigate to="/dashboard" replace />
   return <Outlet />
 }

@@ -9,31 +9,44 @@ interface ListingFilters {
   search?: string
 }
 
-export function useListings(filters: ListingFilters = {}) {
+const LISTINGS_PAGE_SIZE = 12
+
+export function useListings(filters: ListingFilters = {}, page: number = 1, pageSize: number = LISTINGS_PAGE_SIZE) {
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [totalCount, setTotalCount] = useState(0)
 
   const fetch = useCallback(async () => {
     setLoading(true)
+    const from = (page - 1) * pageSize
+    const to = from + pageSize - 1
+
     let query = supabase
       .from('listings')
-      .select('*')
+      .select('*', { count: 'exact' })
       .or('status.eq.available,status.is.null')
       .order('created_at', { ascending: false })
+      .range(from, to)
 
     if (filters.crop)   query = query.eq('crop', filters.crop)
     if (filters.state)  query = query.eq('state', filters.state)
     if (filters.search) query = query.ilike('crop', `%${filters.search}%`)
 
-    const { data, error } = await query
+    const { data, error, count } = await query
     if (error) setError(error.message)
-    else setListings((data as Listing[]) ?? [])
+    else {
+      setListings((data as Listing[]) ?? [])
+      setTotalCount(count ?? 0)
+    }
     setLoading(false)
-  }, [filters.crop, filters.state, filters.search])
+  }, [filters.crop, filters.state, filters.search, page, pageSize])
 
   useEffect(() => { fetch() }, [fetch])
-  return { listings, loading, error, refetch: fetch }
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+
+  return { listings, loading, error, refetch: fetch, totalCount, totalPages, page, pageSize }
 }
 
 export function useMyListings(farmerId: string | undefined) {

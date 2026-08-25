@@ -18,19 +18,26 @@ export default function BrowseListings() {
   const [search, setSearch] = useState('')
   const [cropFilter, setCropFilter] = useState('All')
   const [stateFilter, setStateFilter] = useState('All States')
+  const [page, setPage] = useState(1)
 
-  const { listings, loading, error } = useListings({
+  const { listings, loading, error, totalCount, totalPages } = useListings({
     crop:   cropFilter !== 'All' ? cropFilter : undefined,
     state:  stateFilter !== 'All States' ? stateFilter : undefined,
     search: search || undefined,
-  })
+  }, page)
+
+  // Reset to page 1 whenever a filter or search term changes, so we don't
+  // end up stuck on e.g. page 4 of a filtered result set that only has 1 page.
+  function updateSearch(value: string) { setSearch(value); setPage(1) }
+  function updateCrop(value: string) { setCropFilter(value); setPage(1) }
+  function updateState(value: string) { setStateFilter(value); setPage(1) }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Fresh Produce</h1>
-          <p className="text-gray-500 text-sm mt-0.5">{listings.length} listing{listings.length !== 1 ? 's' : ''} available</p>
+          <p className="text-gray-500 text-sm mt-0.5">{totalCount} listing{totalCount !== 1 ? 's' : ''} available</p>
         </div>
         {isFarmer && (
           <Link to="/listings/create"
@@ -42,12 +49,12 @@ export default function BrowseListings() {
       <div className="relative mb-4">
         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
         <input type="text" placeholder="Search by crop name…" value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={e => updateSearch(e.target.value)}
           className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white" />
       </div>
       <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
         {CROP_FILTERS.map(c => (
-          <button key={c} onClick={() => setCropFilter(c)}
+          <button key={c} onClick={() => updateCrop(c)}
             className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
               cropFilter === c
                 ? 'bg-green-600 text-white'
@@ -56,7 +63,7 @@ export default function BrowseListings() {
         ))}
       </div>
       <div className="mb-6">
-        <select value={stateFilter} onChange={e => setStateFilter(e.target.value)}
+        <select value={stateFilter} onChange={e => updateState(e.target.value)}
           className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white">
           {STATES.map(s => <option key={s}>{s}</option>)}
         </select>
@@ -78,9 +85,30 @@ export default function BrowseListings() {
           <p className="text-gray-500 text-sm">Try adjusting your filters or search term</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {listings.map(listing => <ListingCard key={listing.id} listing={listing} />)}
-        </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {listings.map(listing => <ListingCard key={listing.id} listing={listing} />)}
+          </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-4 mt-8">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-4 py-2 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 hover:border-green-400 disabled:opacity-40 disabled:hover:border-gray-200 transition-colors">
+                ← Prev
+              </button>
+              <span className="text-sm text-gray-500">
+                Page {page} of {totalPages}
+              </span>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-4 py-2 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 hover:border-green-400 disabled:opacity-40 disabled:hover:border-gray-200 transition-colors">
+                Next →
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )
