@@ -35,6 +35,13 @@ export function useOrderStatus(reference: string | null) {
   useEffect(() => {
     if (!reference) return
     let isActive = true
+    supabase
+      .from('orders')
+      .select('status')
+      .eq('paystack_ref', reference)
+      .maybeSingle<{ status: Order['status'] }>()
+      .then(({ data }) => { if (isActive && data) setStatus(data.status) })
+
     const channel = supabase
       .channel(`order:${reference}:${crypto.randomUUID()}`)
       .on('postgres_changes',
@@ -67,5 +74,61 @@ export function useMyOrders(userId: string | undefined, role: 'buyer' | 'farmer'
   }, [userId, role])
 
   useEffect(() => { fetch() }, [fetch])
+
+  useEffect(() => {
+    if (!userId) return
+    let isActive = true
+    const column = role === 'buyer' ? 'buyer_id' : 'farmer_id'
+    const channel = supabase
+      .channel(`orders:${userId}:${crypto.randomUUID()}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `${column}=eq.${userId}` },
+        () => { if (isActive) fetch() }
+      )
+      .subscribe()
+
+    return () => { isActive = false; supabase.removeChannel(channel) }
+  }, [userId, role, fetch])
+
   return { orders, loading, refetch: fetch }
+}
+
+export async function updateOrderStatus(
+  orderId: string,
+  status: Order['status']
+): Promise<void> {
+  const { error } = await supabase.from('orders').update({ status }).eq('id', orderId)
+  if (error) throw error
+}
+
+export function useActionableOrdersCount(farmerId: string | undefined) {
+  const [count, setCount] = useState(0)
+
+  const fetch = useCallback(async () => {
+    if (!farmerId) { setCount(0); return }
+    const { count: c } = await supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('farmer_id', farmerId)
+      .eq('status', 'confirmed')
+    setCount(c ?? 0)
+  }, [farmerId])
+
+  useEffect(() => { fetch() }, [fetch])
+
+  useEffect(() => {
+    if (!farmerId) return
+    let isActive = true
+    const channel = supabase
+      .channel(`actionable-orders:${farmerId}:${crypto.randomUUID()}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `farmer_id=eq.${farmerId}` },
+        () => { if (isActive) fetch() }
+      )
+      .subscribe()
+
+    return () => { isActive = false; supabase.removeChannel(channel) }
+  }, [farmerId, fetch])
+
+  return count
 }

@@ -46,7 +46,7 @@ export interface Order {
   buyer_id: string
   farmer_id: string
   amount_kobo: number
-  status: 'pending' | 'confirmed' | 'failed'
+  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'failed'
   paystack_ref: string
   created_at: string
 }

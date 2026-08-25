@@ -2,13 +2,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { useAuthContext } from '@/store/AuthContext'
 import { useInbox } from '@/hooks/useMessages'
-
+import { useActionableOrdersCount } from '@/hooks/useOrders'
 
 export default function Navbar() {
-  const { profile, isFarmer, signOut } = useAuthContext()
+  const { profile, isFarmer, signOut, user } = useAuthContext()
   const navigate = useNavigate()
-  const { user } = useAuthContext()
   const { totalUnread } = useInbox(user?.id)
+  const actionableOrders = useActionableOrdersCount(isFarmer ? user?.id : undefined)
 
   async function handleSignOut() {
     try {
@@ -29,20 +29,22 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600">
           <Link to="/listings" className="hover:text-green-700 transition-colors">Browse</Link>
           {isFarmer && (
-            <Link to="/listings/create" className="hover:text-green-700 transition-colors">
+            <Link to="/listings/mine" className="hover:text-green-700 transition-colors">
               My Listings
             </Link>
           )}
-          <Link to=
-            "/messages"
-            className=
-            "relative hover:text-green-700 transition-colors"
-          >
+          <Link to="/orders" className="relative hover:text-green-700 transition-colors">
+            Orders
+            {actionableOrders > 0 && (
+              <span className="absolute -top-2 -right-3 bg-blue-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                {actionableOrders}
+              </span>
+            )}
+          </Link>
+          <Link to="/messages" className="relative hover:text-green-700 transition-colors">
             Messages
             {totalUnread > 0 && (
-              <span className=
-                "absolute -top-2 -right-3 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center"
-              >
+              <span className="absolute -top-2 -right-3 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                 {totalUnread}
               </span>
             )}

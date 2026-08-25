@@ -54,7 +54,7 @@ export default function ListingDetail() {
     setReference(ref)
 
     try {
-      const pendingOrder = createPendingOrder(listing.id, user.id, listing.farmer_id, amountKobo, ref)
+      await createPendingOrder(listing.id, user.id, listing.farmer_id, amountKobo, ref)
 
       initializePayment({
         config: {
@@ -66,7 +66,6 @@ export default function ListingDetail() {
         onClose: () => setPaying(false),
       } as any)
 
-      await pendingOrder
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not start checkout')
       setPaying(false)
