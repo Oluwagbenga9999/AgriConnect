@@ -41,6 +41,9 @@ export default function Navbar() {
               </span>
             )}
           </Link>
+          <Link to="/orders/completed" className="hover:text-green-700 transition-colors">
+            Completed
+          </Link>
           <Link to="/messages" className="relative hover:text-green-700 transition-colors">
             Messages
             {totalUnread > 0 && (

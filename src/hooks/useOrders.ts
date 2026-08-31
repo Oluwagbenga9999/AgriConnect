@@ -91,6 +91,7 @@ const TIMESTAMP_COLUMN: Partial<Record<Order['status'], string>> = {
   packaged:  'packaged_at',
   shipped:   'shipped_at',
   delivered: 'delivered_at',
+  received:  'received_at',
 }
 
 export async function updateOrderStatus(

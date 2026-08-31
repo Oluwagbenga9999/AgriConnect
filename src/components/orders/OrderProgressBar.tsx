@@ -6,6 +6,7 @@ const STAGES: { key: Order['status']; label: string }[] = [
   { key: 'packaged',  label: 'Packaged' },
   { key: 'shipped',   label: 'Sent' },
   { key: 'delivered', label: 'Delivered' },
+  { key: 'received',  label: 'Received' },
 ]
 
 const STAGE_INDEX: Record<string, number> = Object.fromEntries(STAGES.map((s, i) => [s.key, i]))
@@ -21,6 +22,34 @@ export default function OrderProgressBar({ status }: OrderProgressBarProps) {
         status === 'failed' ? 'bg-red-50 text-red-600' : 'bg-yellow-50 text-yellow-700'
       }`}>
         {status === 'failed' ? 'Payment failed' : 'Awaiting payment'}
+      </div>
+    )
+  }
+
+  if (status === 'received') {
+    return (
+      <div className="mt-3">
+        <div className="flex items-center w-full">
+          {STAGES.map((stage, i) => {
+            const isLast = i === STAGES.length - 1
+            return (
+              <div key={stage.key} className="flex items-center flex-1 last:flex-none">
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 bg-green-600 text-white">
+                    ✓
+                  </div>
+                  <span className="text-[10px] font-medium whitespace-nowrap text-green-700">
+                    {stage.label}
+                  </span>
+                </div>
+                {!isLast && <div className="h-0.5 flex-1 mx-1 mb-4 bg-green-600" />}
+              </div>
+            )
+          })}
+        </div>
+        <div className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+          Certified complete
+        </div>
       </div>
     )
   }

@@ -45,7 +45,8 @@ export default function App() {
         <Route path="/messages" element={<Inbox />} />
         <Route path="/messages/:id" element={<Conversation />} />
         <Route path="/listings/:id" element={<ListingDetail />} />
-        <Route path="/orders" element={<OrderHistory />} />
+        <Route path="/orders" element={<OrderHistory mode="active" />} />
+        <Route path="/orders/completed" element={<OrderHistory mode="completed" />} />
       </Route>
     </Routes>
   )
