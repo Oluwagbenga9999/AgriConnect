@@ -100,14 +100,25 @@ create policy "messages_update_receiver_marks_read"
 -- ============================================================
 alter table public.orders enable row level security;
 
--- Buyer or farmer on the order can view it
+-- Allow the app to add the lifecycle timestamps in a safe, idempotent way.
+alter table public.orders
+  add column if not exists seen_at      timestamptz,
+  add column if not exists packaged_at  timestamptz,
+  add column if not exists shipped_at   timestamptz,
+  add column if not exists delivered_at timestamptz;
+
+-- Keep the database in sync with the app's order lifecycle statuses.
+alter table public.orders drop constraint if exists orders_status_check;
+alter table public.orders add constraint orders_status_check
+  check (status in ('pending', 'confirmed', 'seen', 'packaged', 'shipped', 'delivered', 'failed'));
+
+-- Buyer or farmer on the order can view it.
 create policy "orders_select_own"
   on public.orders for select
   to authenticated
   using (buyer_id = auth.uid() or farmer_id = auth.uid());
 
--- A buyer can create a pending order for themselves, but ONLY with status
--- 'pending'. They cannot insert a row that's already 'confirmed'.
+-- A buyer can create a pending order only for themselves.
 create policy "orders_insert_own_pending"
   on public.orders for insert
   to authenticated
@@ -116,27 +127,18 @@ create policy "orders_insert_own_pending"
     and status = 'pending'
   );
 
--- Clients are NEVER allowed to set status to 'confirmed' — only the
--- paystack-webhook Edge Function can do that, because it runs with the
--- service_role key, which bypasses RLS entirely (see below).
---
--- Farmers ARE allowed to advance a 'confirmed' order to 'shipped', and a
--- 'shipped' order to 'delivered' — but nothing else, and only on their own
--- orders, and never touching amount_kobo / paystack_ref / buyer_id / farmer_id.
+-- Farmers may only advance their own order through the fulfillment stages.
+-- This keeps the lifecycle consistent with the app's frontend flow:
+-- confirmed -> seen -> packaged -> shipped -> delivered.
 create policy "orders_update_farmer_fulfillment"
   on public.orders for update
   to authenticated
   using (
     farmer_id = auth.uid()
-    and status in ('confirmed', 'shipped')
   )
   with check (
     farmer_id = auth.uid()
-    -- only the two forward transitions a farmer is allowed to make
-    and (
-      (status = 'shipped')
-      or (status = 'delivered')
-    )
+    and status in ('seen', 'packaged', 'shipped', 'delivered')
   );
 
 -- No delete policy is created for orders — orders should never be deletable
@@ -148,11 +150,9 @@ create policy "orders_update_farmer_fulfillment"
 -- ONLY path that should ever be able to do so. Do not create a client-facing
 -- policy that allows setting status = 'confirmed'.
 
--- RLS's `with check` clause alone can't stop a farmer from bundling an
--- unrelated column change (e.g. amount_kobo) into the same update call that
--- legitimately marks an order 'shipped'. This trigger enforces that a
--- non-service-role update to `orders` may ONLY change `status` — every
--- other column must stay byte-for-byte identical.
+-- RLS's with check alone cannot stop a farmer from bundling unrelated column
+-- changes into the same update call as a legitimate status update. The trigger
+-- below blocks non-service-role edits to buyer/farmer/listing/payment metadata.
 create or replace function public.orders_lock_financial_columns()
 returns trigger
 language plpgsql
@@ -171,7 +171,7 @@ begin
      or new.listing_id   is distinct from old.listing_id
      or new.created_at   is distinct from old.created_at
   then
-    raise exception 'orders: only status may be updated by clients';
+    raise exception 'orders: only status and fulfillment timestamps may be updated by clients';
   end if;
 
   return new;
@@ -183,3 +183,55 @@ create trigger orders_lock_financial_columns_trg
   before update on public.orders
   for each row
   execute function public.orders_lock_financial_columns();
+
+-- Enforce the intended forward-only fulfillment progression, and stamp the
+-- appropriate timestamp when the status advances.
+create or replace function public.orders_enforce_fulfillment_progression()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.role() = 'service_role' then
+    return new;
+  end if;
+
+  if new.farmer_id is distinct from old.farmer_id
+     or new.buyer_id is distinct from old.buyer_id
+     or new.listing_id is distinct from old.listing_id
+     or new.amount_kobo is distinct from old.amount_kobo
+     or new.paystack_ref is distinct from old.paystack_ref
+     or new.created_at is distinct from old.created_at
+  then
+    raise exception 'orders: invalid order mutation';
+  end if;
+
+  if new.status = old.status then
+    return new;
+  end if;
+
+  if old.status = 'confirmed' and new.status = 'seen' then
+    new.seen_at = coalesce(new.seen_at, now());
+    return new;
+  elsif old.status = 'seen' and new.status = 'packaged' then
+    new.packaged_at = coalesce(new.packaged_at, now());
+    return new;
+  elsif old.status = 'packaged' and new.status = 'shipped' then
+    new.shipped_at = coalesce(new.shipped_at, now());
+    return new;
+  elsif old.status = 'shipped' and new.status = 'delivered' then
+    new.delivered_at = coalesce(new.delivered_at, now());
+    return new;
+  end if;
+
+  raise exception 'orders: invalid fulfillment transition: % -> %', old.status, new.status;
+end;
+$$;
+
+drop trigger if exists orders_enforce_fulfillment_progression_trg on public.orders;
+create trigger orders_enforce_fulfillment_progression_trg
+  before update on public.orders
+  for each row
+  when (old.status is distinct from new.status)
+  execute function public.orders_enforce_fulfillment_progression();

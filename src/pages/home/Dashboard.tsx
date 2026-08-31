@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useAuthContext } from '@/store/AuthContext'
 import { useMyListings } from '@/hooks/useListings'
 import { useInbox } from '@/hooks/useMessages'
+import { useNewOrdersCount } from '@/hooks/useOrders'
 
 interface QuickAction {
   icon:  string
@@ -37,9 +38,9 @@ export default function Dashboard() {
   const actions = isFarmer ? FARMER_ACTIONS : BUYER_ACTIONS
   const firstName = profile?.full_name?.split(' ')[0] ?? 'there'
 
-  // Real completion signals — no more hardcoded checklist state
   const { listings: myListings } = useMyListings(isFarmer ? user?.id : undefined)
   const { conversations } = useInbox(user?.id)
+  const newOrdersCount = useNewOrdersCount(isFarmer ? user?.id : undefined)
 
   const isProfileComplete = isFarmer
     ? !!(profile?.full_name && profile?.phone && (profile?.location || profile?.state) && profile?.crop_types?.length)
@@ -77,6 +78,19 @@ export default function Dashboard() {
             : 'Discover fresh produce directly from Nigerian farmers.'}
         </p>
       </div>
+      {isFarmer && newOrdersCount > 0 && (
+        <Link to="/orders"
+          className="flex items-center gap-4 bg-blue-50 border border-blue-100 rounded-2xl p-5 mb-8 hover:bg-blue-100 transition-colors">
+          <span className="text-3xl">🛎️</span>
+          <div className="flex-1">
+            <p className="font-semibold text-blue-900">
+              {newOrdersCount} new order{newOrdersCount !== 1 ? 's' : ''} waiting for you
+            </p>
+            <p className="text-sm text-blue-700 mt-0.5">Someone paid for your produce — open Orders to process it.</p>
+          </div>
+          <span className="text-blue-600 font-semibold text-sm">View →</span>
+        </Link>
+      )}
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
         {actions.map((action) => (

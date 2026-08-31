@@ -2,6 +2,8 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const PAYSTACK_SECRET = Deno.env.get('PAYSTACK_SECRET_KEY')!
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+const APP_URL = Deno.env.get('APP_URL') ?? 'https://your-app-url.com'
 
 async function verifySignature(body: string, signature: string | null): Promise<boolean> {
   if (!signature) return false
@@ -13,6 +15,38 @@ async function verifySignature(body: string, signature: string | null): Promise<
   const computed = Array.from(new Uint8Array(sigBytes))
     .map(b => b.toString(16).padStart(2, '0')).join('')
   return computed === signature
+}
+
+async function notifyFarmer(email: string, cropName: string, amountKobo: number) {
+  if (!RESEND_API_KEY) return
+  const amountNaira = (amountKobo / 100).toLocaleString('en-NG')
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'AgriConnect <orders@resend.dev>',
+        to: [email],
+        subject: `🎉 You made a sale — ${cropName}`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+            <h2 style="color: #1F6E45;">You just made a sale!</h2>
+            <p>Someone paid <strong>₦${amountNaira}</strong> for your <strong>${cropName}</strong> listing.</p>
+            <p>Log in to AgriConnect to see the order and mark it as packaged once it's ready to send.</p>
+            <a href="${APP_URL}/orders"
+              style="display:inline-block;margin-top:16px;padding:12px 24px;background:#1F6E45;color:white;text-decoration:none;border-radius:8px;">
+              View your orders
+            </a>
+          </div>
+        `,
+      }),
+    })
+  } catch (err) {
+    console.error('Failed to send farmer notification email:', err)
+  }
 }
 
 Deno.serve(async (req) => {
@@ -40,7 +74,7 @@ Deno.serve(async (req) => {
 
   const { data: order } = await supabase
     .from('orders')
-    .select('*')
+    .select('*, listing:listings(crop)')
     .eq('paystack_ref', reference)
     .single()
 
@@ -54,6 +88,15 @@ Deno.serve(async (req) => {
 
   if (order.listing_id) {
     await supabase.from('listings').update({ status: 'sold' }).eq('id', order.listing_id)
+  }
+
+  const { data: farmerAuth } = await supabase.auth.admin.getUserById(order.farmer_id)
+  if (farmerAuth?.user?.email) {
+    await notifyFarmer(
+      farmerAuth.user.email,
+      order.listing?.crop ?? 'your produce',
+      order.amount_kobo
+    )
   }
 
   return new Response('ok', { status: 200 })

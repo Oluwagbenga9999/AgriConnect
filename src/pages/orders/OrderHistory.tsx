@@ -1,36 +1,28 @@
 // src/pages/orders/OrderHistory.tsx
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from 'react-hot-toast'
 import { useAuthContext } from '@/store/AuthContext'
-import { useMyOrders, updateOrderStatus } from '@/hooks/useOrders'
-import { Order } from '@/types'
-
-const STATUS_STYLES: Record<string, string> = {
-  pending:   'bg-yellow-100 text-yellow-700',
-  confirmed: 'bg-green-100 text-green-700',
-  shipped:   'bg-blue-100 text-blue-700',
-  delivered: 'bg-gray-200 text-gray-700',
-  failed:    'bg-red-100 text-red-600',
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  pending:   'Pending',
-  confirmed: 'Paid — awaiting shipment',
-  shipped:   'Shipped',
-  delivered: 'Delivered',
-  failed:    'Failed',
-}
+import { useMyOrders, updateOrderStatus, markSeenIfNeeded } from '@/hooks/useOrders'
+import OrderProgressBar from '@/components/orders/OrderProgressBar'
 
 export default function OrderHistory() {
   const { user, isFarmer } = useAuthContext()
   const { orders, loading, refetch } = useMyOrders(user?.id, isFarmer ? 'farmer' : 'buyer')
   const [updating, setUpdating] = useState<string | null>(null)
 
-  async function handleAdvance(orderId: string, nextStatus: Order['status']) {
+  useEffect(() => {
+    if (!isFarmer || orders.length === 0) return
+    const newlyConfirmed = orders.filter(o => o.status === 'confirmed')
+    if (newlyConfirmed.length === 0) return
+    Promise.all(newlyConfirmed.map(o => markSeenIfNeeded(o))).then(() => refetch())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFarmer, orders.length])
+
+  async function handleAdvance(orderId: string, nextStatus: 'packaged' | 'shipped') {
     setUpdating(orderId)
     try {
       await updateOrderStatus(orderId, nextStatus)
-      toast.success(nextStatus === 'shipped' ? 'Marked as shipped' : 'Marked as delivered')
+      toast.success(nextStatus === 'packaged' ? 'Marked as packaged' : 'Marked as sent')
       refetch()
     } catch {
       toast.error('Failed to update order')
@@ -67,21 +59,21 @@ export default function OrderHistory() {
                 </div>
                 <div className="text-right">
                   <div className="font-bold text-gray-900 text-sm">₦{(o.amount_kobo / 100).toLocaleString()}</div>
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_STYLES[o.status]}`}>
-                    {STATUS_LABELS[o.status]}
-                  </span>
                 </div>
               </div>
-              {isFarmer && o.status === 'confirmed' && (
-                <button onClick={() => handleAdvance(o.id, 'shipped')} disabled={updating === o.id}
+
+              <OrderProgressBar status={o.status} />
+
+              {isFarmer && (o.status === 'confirmed' || o.status === 'seen') && (
+                <button onClick={() => handleAdvance(o.id, 'packaged')} disabled={updating === o.id}
                   className="w-full mt-3 text-xs font-semibold py-2.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 disabled:opacity-50 transition-colors">
-                  {updating === o.id ? 'Updating…' : '📦 Mark as shipped'}
+                  {updating === o.id ? 'Updating…' : '📦 Mark as packaged'}
                 </button>
               )}
-              {isFarmer && o.status === 'shipped' && (
-                <button onClick={() => handleAdvance(o.id, 'delivered')} disabled={updating === o.id}
-                  className="w-full mt-3 text-xs font-semibold py-2.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 transition-colors">
-                  {updating === o.id ? 'Updating…' : '✓ Mark as delivered'}
+              {isFarmer && o.status === 'packaged' && (
+                <button onClick={() => handleAdvance(o.id, 'shipped')} disabled={updating === o.id}
+                  className="w-full mt-3 text-xs font-semibold py-2.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 disabled:opacity-50 transition-colors">
+                  {updating === o.id ? 'Updating…' : '🚚 Mark as sent'}
                 </button>
               )}
             </div>
