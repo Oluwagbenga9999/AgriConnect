@@ -44,7 +44,7 @@ export function useListings(filters: ListingFilters = {}, page: number = 1, page
 
   useEffect(() => {
     fetch()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [fetch])
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
@@ -70,7 +70,7 @@ export function useMyListings(farmerId: string | undefined) {
 
   useEffect(() => {
     fetch()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [fetch])
   return { listings, loading, refetch: fetch }
 }
