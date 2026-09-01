@@ -60,7 +60,10 @@ export function useInbox(userId: string | undefined) {
     setLoading(false)
   }, [userId])
 
-  useEffect(() => { fetchInbox() }, [fetchInbox])
+  useEffect(() => {
+    fetchInbox()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchInbox])
 
   useEffect(() => {
   if (!userId) return
@@ -91,6 +94,7 @@ export function useConversation(currentUserId: string | undefined, otherUserId: 
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     if (!currentUserId || !otherUserId) { setLoading(false); return }
 
     async function load() {

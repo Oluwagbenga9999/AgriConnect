@@ -7,9 +7,8 @@ import { useAuthContext } from '@/store/AuthContext'
 import { useMyOrders, updateOrderStatus } from '@/hooks/useOrders'
 import OrderProgressBar from '@/components/orders/OrderProgressBar'
 
-const PAYSTACK_PUBLIC_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY as string
+const PAYSTACK_PUBLIC_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || ''
 
-const ACTIVE_STATUSES = ['pending', 'confirmed', 'seen', 'packaged', 'shipped', 'delivered'] as const
 const COMPLETED_STATUSES = ['received', 'failed'] as const
 
 interface OrderHistoryProps {
@@ -20,7 +19,9 @@ export default function OrderHistory({ mode = 'active' }: OrderHistoryProps) {
   const { user, isFarmer } = useAuthContext()
   const { orders, loading, refetch } = useMyOrders(user?.id, isFarmer ? 'farmer' : 'buyer')
   const [updating, setUpdating] = useState<string | null>(null)
-  const initializePayment = usePaystackPayment({ publicKey: PAYSTACK_PUBLIC_KEY } as any)
+  const initializePayment = usePaystackPayment({
+    publicKey: PAYSTACK_PUBLIC_KEY,
+  })
 
   async function handleAdvance(orderId: string, nextStatus: 'seen' | 'packaged' | 'shipped' | 'delivered' | 'received') {
     setUpdating(orderId)
@@ -65,7 +66,7 @@ export default function OrderHistory({ mode = 'active' }: OrderHistoryProps) {
       onClose: () => {
         toast('Payment not completed yet', { icon: '⏳' })
       },
-    } as any)
+    })
   }
 
   const visibleOrders = orders.filter(o => {

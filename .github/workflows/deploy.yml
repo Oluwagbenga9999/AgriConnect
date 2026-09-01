@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
@@ -47,6 +47,9 @@ jobs:
         uses: denoland/setup-deno@v1
         with:
           deno-version: latest
+      
+      - name: Cache Deno dependencies
+        run: cd backend && deno cache supabase/functions/paystack-webhook/index.ts
 
       - name: Cache Deno dependencies
         run: cd backend && deno cache supabase/functions/paystack-webhook/index.ts

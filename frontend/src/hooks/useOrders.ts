@@ -66,7 +66,10 @@ export function useMyOrders(userId: string | undefined, role: 'buyer' | 'farmer'
     setLoading(false)
   }, [userId, role])
 
-  useEffect(() => { fetch() }, [fetch])
+  useEffect(() => {
+    fetch()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetch])
 
   useEffect(() => {
     if (!userId) return
@@ -126,7 +129,10 @@ export function useActionableOrdersCount(farmerId: string | undefined) {
     setCount(c ?? 0)
   }, [farmerId])
 
-  useEffect(() => { fetch() }, [fetch])
+  useEffect(() => {
+    fetch()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetch])
 
   useEffect(() => {
     if (!farmerId) return

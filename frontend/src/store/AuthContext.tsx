@@ -1,13 +1,8 @@
 import { createContext, useContext, type ReactNode } from 'react'
-import { useAuth } from '@/hooks/useAuth'
 import type { AuthContextType } from '@/types'
+import { useAuth } from '@/hooks/useAuth'
 
 const AuthContext = createContext<AuthContextType | null>(null)
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const auth = useAuth()
-  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>
-}
 
 export function useAuthContext() {
   const context = useContext(AuthContext)
@@ -15,4 +10,9 @@ export function useAuthContext() {
     throw new Error('useAuthContext must be used inside AuthProvider')
   }
   return context
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const auth = useAuth()
+  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>
 }

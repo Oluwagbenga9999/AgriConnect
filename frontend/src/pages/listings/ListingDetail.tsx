@@ -9,7 +9,7 @@ import { createPendingOrder, generateReference, useOrderStatus } from '@/hooks/u
 import { usePublicProfile } from '@/hooks/useProfile'
 import { Listing } from '@/types'
 
-const PAYSTACK_PUBLIC_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY as string
+const PAYSTACK_PUBLIC_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || ''
 
 export default function ListingDetail() {
   const { id } = useParams<{ id: string }>()
@@ -38,13 +38,13 @@ export default function ListingDetail() {
       toast.success('Payment confirmed! 🎉')
       navigate('/orders')
     }
-  }, [orderStatus, navigate])
+  }, [orderStatus, navigate, listing?.id])
 
   const amountKobo = listing ? Math.round(listing.quantity_kg * listing.price_per_kg * 100) : 0
 
   const initializePayment = usePaystackPayment({
-    publicKey: PAYSTACK_PUBLIC_KEY,
-  } as any)
+    publicKey: PAYSTACK_PUBLIC_KEY || '',
+  })
 
   async function handleBuyNow() {
     if (!user || !listing) return
@@ -64,7 +64,7 @@ export default function ListingDetail() {
         },
         onSuccess: () => toast.success('Payment submitted — confirming…'),
         onClose: () => setPaying(false),
-      } as any)
+      })
 
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not start checkout')

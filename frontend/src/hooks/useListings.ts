@@ -42,7 +42,10 @@ export function useListings(filters: ListingFilters = {}, page: number = 1, page
     setLoading(false)
   }, [filters.crop, filters.state, filters.search, page, pageSize])
 
-  useEffect(() => { fetch() }, [fetch])
+  useEffect(() => {
+    fetch()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetch])
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
 
@@ -65,7 +68,10 @@ export function useMyListings(farmerId: string | undefined) {
     setLoading(false)
   }, [farmerId])
 
-  useEffect(() => { fetch() }, [fetch])
+  useEffect(() => {
+    fetch()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetch])
   return { listings, loading, refetch: fetch }
 }
 
