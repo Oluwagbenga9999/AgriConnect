@@ -3,36 +3,16 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "description": "AgriConnect - Marketplace connecting Nigerian farmers with buyers",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.110.7",
-    "clsx": "^2.1.1",
-    "lucide-react": "^1.25.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-hot-toast": "^2.6.0",
-    "react-paystack": "^6.0.0",
-    "react-router-dom": "^7.18.1"
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@tailwindcss/vite": "^4.3.3",
-    "@types/node": "^24.1.0",
-    "@types/react": "^18.3.4",
-    "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^6.0.3",
-    "eslint": "^10.6.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.3",
-    "globals": "^17.7.0",
-    "tailwindcss": "^4.3.3",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.34.1",
-    "vite": "^8.1.1"
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "dev": "npm run dev:frontend & npm run dev:backend & wait",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "echo 'Backend built as part of Docker image'",
+    "lint": "cd frontend && npm run lint",
+    "preview": "cd frontend && npm run preview"
   }
 }

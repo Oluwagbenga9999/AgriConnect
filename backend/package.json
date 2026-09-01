@@ -1,0 +1,16 @@
+{
+  "name": "agriconnect-backend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "deno run --allow-net --allow-env supabase/functions/paystack-webhook/index.ts",
+    "start": "deno run --allow-net --allow-env supabase/functions/paystack-webhook/index.ts",
+    "test": "deno test --allow-net --allow-env",
+    "test:watch": "deno test --allow-net --allow-env --watch",
+    "lint": "deno lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

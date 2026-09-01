@@ -1,19 +1,20 @@
-FROM node:24-alpine AS builder
+# Root Dockerfile - builds both frontend and backend
+# For production, use docker-compose or build individual services separately
 
-WORKDIR /app
+FROM node:24-alpine AS frontend-builder
 
-COPY package*.json ./
-RUN npm ci --only=production=false
+WORKDIR /frontend
 
-COPY . .
+COPY frontend/package*.json ./
+RUN npm ci
+
+COPY frontend . .
 RUN npm run build
 
 FROM nginx:alpine
 
-# Copy built app
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=frontend-builder /frontend/dist /usr/share/nginx/html
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose port
 EXPOSE 80
-
 CMD ["nginx", "-g", "daemon off;"]

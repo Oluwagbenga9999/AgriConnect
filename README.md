@@ -2,6 +2,8 @@
 
 A marketplace web app connecting Nigerian farmers directly with buyers — list produce, message, and pay securely via Paystack, with no middleman.
 
+**This is a monorepo with separate frontend and backend services.**
+
 ## What it does
 
 AgriConnect has two user roles:
@@ -17,6 +19,27 @@ Core features:
 - Order lifecycle: `pending → confirmed → shipped → delivered`
 - Dashboard with role-specific quick actions and an onboarding checklist
 
+## Project structure
+
+```
+frontend/          # React + Vite frontend application
+  src/
+  package.json
+  Dockerfile
+  nginx.conf
+  
+backend/           # Supabase Edge Functions & database
+  supabase/
+    functions/
+      paystack-webhook/
+  01_schema.sql
+  02_rls_policies.sql
+  package.json
+  Dockerfile
+
+docker-compose.yml # Multi-service orchestration
+```
+
 ## Tech stack
 
 | Layer | Tech |
@@ -24,79 +47,106 @@ Core features:
 | Frontend | React 18 + TypeScript, Vite, React Router v7, Tailwind CSS v4 |
 | Backend | Supabase (Postgres, Auth, Storage, Realtime, Edge Functions) |
 | Payments | Paystack (`react-paystack` client SDK + a Deno Edge Function webhook) |
-| Deployment | Docker (multi-stage build) + Nginx, GitHub Actions workflow |
+| Deployment | Docker + Docker Compose, Nginx, GitHub Actions |
 
-## Project structure
-
-```
-src/
-  components/
-    layout/       # Navbar, ProtectedRoute
-    listings/      # Browse, create, my listings, listing card
-  hooks/           # useAuth, useListings, useOrders, useMessages, useProfile
-  pages/
-    auth/          # Login, Register
-    home/          # Landing, Dashboard
-    listings/      # ListingDetail
-    messages/      # Inbox, Conversation
-    orders/        # OrderHistory
-    profile/       # EditProfile, PublicProfile
-  store/           # AuthContext
-  types/           # Shared TS types
-supabase/
-  functions/
-    paystack-webhook/   # Verifies Paystack signature, confirms orders server-side
-```
-
-## Getting started
+## Quick start
 
 ### Prerequisites
 - Node.js 20+
+- Docker & Docker Compose (for containerized setup)
 - A [Supabase](https://supabase.com) project
 - A [Paystack](https://paystack.com) account (test mode is fine for development)
 
-### Setup
+### Local development
 
-1. Clone and install:
+1. Clone and install dependencies:
    ```bash
    git clone https://github.com/Oluwagbenga9999/AgriConnect.git
    cd AgriConnect
-   npm install
+   npm run install:all
    ```
 
-2. Copy the env template and fill in your keys:
+2. Set up environment variables:
    ```bash
-   cp .env.example .env
+   cp .env.example .env.local
+   cp frontend/.env.example frontend/.env.local
+   cp backend/.env.example backend/.env.local
    ```
-   ```env
-   VITE_SUPABASE_URL=https://your-project.supabase.co
-   VITE_SUPABASE_ANON_KEY=your-anon-key
-   VITE_PAYSTACK_PUBLIC_KEY=pk_test_xxxxxxxx
-   ```
+   Fill in your Supabase and Paystack keys.
 
-3. In your Supabase project, create the `profiles`, `listings`, `messages`, and `orders` tables (see **Database schema** below) with Row Level Security enabled, and a `listing-photos` storage bucket.
+3. Set up database (in your Supabase project):
+   - Create tables: `profiles`, `listings`, `messages`, `orders`
+   - Create storage bucket: `listing-photos`
+   - Enable Row Level Security
+   - See [backend/README.md](backend/README.md) for SQL schemas
 
-4. Deploy the webhook and set its secret:
+4. Deploy the webhook:
    ```bash
+   cd backend
    supabase functions deploy paystack-webhook
    supabase secrets set PAYSTACK_SECRET_KEY=sk_test_xxxxxxxx
    ```
-   Then add the deployed function URL as a webhook endpoint in your Paystack dashboard, listening for `charge.success`.
 
-5. Run the app:
+5. Run both services:
    ```bash
    npm run dev
+   # This runs frontend dev server on http://localhost:5173
+   # and backend on http://localhost:8000
    ```
 
-### Docker
+### Testing
+
+Local testing is configured for both frontend and backend:
+
+**Frontend (Vitest + React Testing Library):**
+```bash
+cd frontend
+npm run test           # Run tests once
+npm run test:ui       # Interactive test dashboard
+npm run test:coverage # Generate coverage report
+```
+
+**Backend (Deno testing):**
+```bash
+cd backend
+npm run test          # Run tests once
+npm run test:watch   # Watch mode - re-run on changes
+npm run lint         # Lint with deno lint
+```
+
+Full testing guide: [TESTING.md](TESTING.md)
+
+### Docker Compose (production-like)
 
 ```bash
-docker build -t agriconnect .
-docker run -p 8080:80 agriconnect
+docker-compose up --build
 ```
-Note: since Vite env vars are baked in at build time, pass them as build args or bake a `.env` into the build context before running `docker build`.
 
-## Database schema (expected tables)
+Accesses:
+- Frontend: http://localhost
+- Backend API: http://localhost:8000 (via bridge network)
+
+### CI/CD with GitHub Actions
+
+Automated builds & deployments are configured in [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
+
+**What happens on every push to `main`:**
+1. Lints and builds the frontend
+2. Validates the backend
+3. Builds and pushes Docker images to Docker Hub
+
+**To enable this:**
+1. Fork/push this repo to GitHub
+2. Go to **Settings → Secrets and variables → Actions**
+3. Add required secrets (see [.github/GITHUB_ACTIONS_SETUP.md](.github/GITHUB_ACTIONS_SETUP.md) for complete setup guide)
+
+**Secrets needed:**
+- `DOCKERHUB_USERNAME` & `DOCKERHUB_TOKEN` (for pushing images)
+- `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_PAYSTACK_PUBLIC_KEY` (frontend build)
+
+See [.github/GITHUB_ACTIONS_SETUP.md](.github/GITHUB_ACTIONS_SETUP.md) for detailed setup.
+
+See [frontend/README.md](frontend/README.md) and [backend/README.md](backend/README.md) for service-specific instructions.
 
 | Table | Key columns |
 |---|---|
